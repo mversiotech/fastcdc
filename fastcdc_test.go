@@ -1,9 +1,12 @@
-package fastcdc
+package fastcdc_test
 
 import (
 	"bytes"
+	"math"
 	"os"
 	"testing"
+
+	"codeberg.org/mhofmann/fastcdc"
 )
 
 // Length of each chunk in the test data file, as reported by a C implementation
@@ -20,7 +23,7 @@ func TestRefChunker(t *testing.T) {
 	}
 	defer f.Close()
 
-	chunker := NewRefChunker(f)
+	chunker := fastcdc.NewRefChunker(f)
 
 	for nchunk := 0; chunker.Next(); nchunk++ {
 		chunk := chunker.Chunk()
@@ -60,7 +63,7 @@ func TestCustomChunker(t *testing.T) {
 			return
 		}
 
-		chunker, err := NewChunker(f, minSizes[i], avgSizes[i], maxSizes[i])
+		chunker, err := fastcdc.NewChunker(f, minSizes[i], avgSizes[i], maxSizes[i])
 		if err != nil {
 			t.Error("NewChunker:", err)
 			return
@@ -97,8 +100,8 @@ func TestInvalidMinSize(t *testing.T) {
 	minSizes = []int{0, -1, avgSize + 1}
 
 	for _, minSize := range minSizes {
-		_, err := NewChunker(&b, minSize, avgSize, maxSize)
-		if err != ErrParam {
+		_, err := fastcdc.NewChunker(&b, minSize, avgSize, maxSize)
+		if err != fastcdc.ErrParam {
 			t.Errorf("Expected ErrParam for minSize %d, got %v", minSize, err)
 		}
 	}
@@ -112,13 +115,13 @@ func TestInvalidAvgSize(t *testing.T) {
 	)
 
 	minSize = 2048
-	maxSize = maxAvgSize * 2
+	maxSize = math.MaxInt
 
 	avgSizes = []int{0, 2, -2, minSize / 2, maxSize}
 
 	for _, avgSize := range avgSizes {
-		_, err := NewChunker(&b, minSize, avgSize, maxSize)
-		if err != ErrParam {
+		_, err := fastcdc.NewChunker(&b, minSize, avgSize, maxSize)
+		if err != fastcdc.ErrParam {
 			t.Errorf("Expected ErrParam for avgSize %d, got %v", avgSize, err)
 		}
 	}
@@ -137,8 +140,8 @@ func TestInvalidMaxSize(t *testing.T) {
 	maxSizes = []int{0, -1, minSize - 1, avgSize - 1}
 
 	for _, maxSize := range maxSizes {
-		_, err := NewChunker(&b, minSize, avgSize, maxSize)
-		if err != ErrParam {
+		_, err := fastcdc.NewChunker(&b, minSize, avgSize, maxSize)
+		if err != fastcdc.ErrParam {
 			t.Errorf("Expected ErrParam for maxnSize %d, got %v", maxSize, err)
 		}
 	}
